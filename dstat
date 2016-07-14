@@ -1883,7 +1883,7 @@ def dopen(filename):
     if 'fds' not in list(globals().keys()):
         fds = {}
     if filename not in fds.keys():
-        fds[filename] = open(filename, 'r', 0)
+        fds[filename] = open(filename, 'rb', 0)
     else:
         fds[filename].seek(0)
     return fds[filename]
