@@ -435,14 +435,14 @@ class dstat:
 
     def colwidth(self):
         "Return column width"
-        if isinstance(self.name, bytes):
+        if isinstance(self.name, str):
             return self.width
         else:
             return len(self.nick) * self.width + len(self.nick) - 1
 
     def title(self):
         ret = theme['title']
-        if isinstance(self.name, bytes):
+        if isinstance(self.name, str):
             width = self.statwidth()
             return ret + self.name[0:width].center(width).replace(' ', '-') + theme['default']
         for i, name in enumerate(self.name):
@@ -457,7 +457,7 @@ class dstat:
 
     def subtitle(self):
         ret = ''
-        if isinstance(self.name, bytes):
+        if isinstance(self.name, str):
             for i, nick in enumerate(self.nick):
                 ret = ret + theme['subtitle'] + nick[0:self.width].center(self.width) + theme['default']
                 if i + 1 != len(self.nick): ret = ret + char['space']
@@ -471,7 +471,7 @@ class dstat:
             return ret
 
     def csvtitle(self):
-        if isinstance(self.name, bytes):
+        if isinstance(self.name, str):
             return '"' + self.name + '"' + char['sep'] * (len(self.nick) - 1)
         else:
             ret = ''
@@ -482,7 +482,7 @@ class dstat:
 
     def csvsubtitle(self):
         ret = ''
-        if isinstance(self.name, bytes):
+        if isinstance(self.name, str):
             for i, nick in enumerate(self.nick):
                 ret = ret + '"' + nick + '"'
                 if i + 1 != len(self.nick): ret = ret + char['sep']
@@ -563,7 +563,7 @@ class dstat:
                     line = line + printcsv(val)
                     if j + 1 != len(self.val[name]):
                         line = line + char['sep']
-            elif isinstance(self.val[name], bytes):
+            elif isinstance(self.val[name], str):
                 line = line + self.val[name]
             else:
                 line = line + printcsv(self.val[name])
@@ -580,7 +580,7 @@ class dstat:
 
 class dstat_aio(dstat):
     def __init__(self):
-        self.name = ['async', ]
+        self.name = 'async'
         self.nick = ('#aio',)
         self.vars = ('aio',)
         self.type = 'd'
@@ -1019,7 +1019,7 @@ class dstat_disk24_old(dstat):
 
 class dstat_epoch(dstat):
     def __init__(self):
-        self.name = ['epoch', ]
+        self.name = 'epoch'
         self.vars = ('epoch',)
         self.width = 10
         if op.debug:
@@ -1033,7 +1033,7 @@ class dstat_epoch(dstat):
 
 class dstat_fs(dstat):
     def __init__(self):
-        self.name = ['filesystem', ]
+        self.name = 'filesystem'
         self.vars = ('files', 'inodes')
         self.type = 'd'
         self.width = 6
@@ -1051,7 +1051,7 @@ class dstat_fs(dstat):
 
 class dstat_int(dstat):
     def __init__(self):
-        self.name = ['interrupts', ]
+        self.name = 'interrupts'
         self.type = 'd'
         self.width = 5
         self.scale = 1000
@@ -1119,7 +1119,7 @@ class dstat_int(dstat):
 
 class dstat_int24(dstat):
     def __init__(self):
-        self.name = ['interrupts', ]
+        self.name = 'interrupts'
         self.type = 'd'
         self.width = 5
         self.scale = 1000
@@ -1258,7 +1258,7 @@ class dstat_io(dstat):
 
 class dstat_ipc(dstat):
     def __init__(self):
-        self.name = ['sysv ipc', ]
+        self.name = 'sysv ipc'
         self.vars = ('msg', 'sem', 'shm')
         self.type = 'd'
         self.width = 3
@@ -1270,7 +1270,7 @@ class dstat_ipc(dstat):
 
 class dstat_load(dstat):
     def __init__(self):
-        self.name = ['load avg', ]
+        self.name = 'load avg'
         self.nick = ('1m', '5m', '15m')
         self.vars = ('load1', 'load5', 'load15')
         self.type = 'f'
@@ -1287,7 +1287,7 @@ class dstat_load(dstat):
 
 class dstat_lock(dstat):
     def __init__(self):
-        self.name = ['file locks', ]
+        self.name = 'file locks'
         self.nick = ('pos', 'lck', 'rea', 'wri')
         self.vars = ('posix', 'flock', 'read', 'write')
         self.type = 'f'
@@ -1306,7 +1306,7 @@ class dstat_lock(dstat):
 
 class dstat_mem(dstat):
     def __init__(self):
-        self.name = ['memory usage', ]
+        self.name = 'memory usage'
         self.nick = ('used', 'free', 'buff', 'cach')
         self.vars = ('MemUsed', 'MemFree', 'Buffers', 'Cached')
         self.open('/proc/meminfo')
@@ -1332,7 +1332,7 @@ class dstat_mem_adv(dstat_mem):
     Additionally, shared memory is added and reclaimable memory is subtracted from the used memory counter.
     """
     def __init__(self):
-        self.name = ['advanced memory usage', ]
+        self.name = 'advanced memory usage'
         self.nick = ('total', 'used', 'free', 'buff', 'cach', 'dirty', 'shmem', 'recl')
         self.vars = ('MemTotal', 'MemUsed', 'MemFree', 'Buffers', 'Cached', 'Dirty', 'Shmem', 'SReclaimable')
         self.open('/proc/meminfo')
@@ -1399,7 +1399,7 @@ class dstat_net(dstat):
 
 class dstat_page(dstat):
     def __init__(self):
-        self.name = ['paging', ]
+        self.name = 'paging'
         self.nick = ('in', 'out')
         self.vars = ('pswpin', 'pswpout')
         self.type = 'd'
@@ -1420,7 +1420,7 @@ class dstat_page(dstat):
 
 class dstat_page24(dstat):
     def __init__(self):
-        self.name = ['paging', ]
+        self.name = 'paging'
         self.nick = ('in', 'out')
         self.vars = ('pswpin', 'pswpout')
         self.type = 'd'
@@ -1443,7 +1443,7 @@ class dstat_page24(dstat):
 
 class dstat_proc(dstat):
     def __init__(self):
-        self.name = ['procs', ]
+        self.name = 'procs'
         self.nick = ('run', 'blk', 'new')
         self.vars = ('procs_running', 'procs_blocked', 'processes')
         self.type = 'f'
@@ -1474,7 +1474,7 @@ class dstat_proc(dstat):
 
 class dstat_raw(dstat):
     def __init__(self):
-        self.name = ['raw', ]
+        self.name = 'raw'
         self.nick = ('raw',)
         self.vars = ('sockets',)
         self.type = 'd'
@@ -1492,7 +1492,7 @@ class dstat_raw(dstat):
 
 class dstat_socket(dstat):
     def __init__(self):
-        self.name = ['sockets', ]
+        self.name = 'sockets'
         self.type = 'd'
         self.width = 3
         self.scale = 100
@@ -1509,7 +1509,7 @@ class dstat_socket(dstat):
 
 class dstat_swap(dstat):
     def __init__(self):
-        self.name = ['swap', ]
+        self.name = 'swap'
         self.nick = ('used', 'free')
         self.type = 'd'
         self.open('/proc/swaps')
@@ -1560,7 +1560,7 @@ class dstat_swap(dstat):
 
 class dstat_swap_old(dstat):
     def __init__(self):
-        self.name = ['swap', ]
+        self.name = 'swap'
         self.nick = ('used', 'free')
         self.vars = ('SwapUsed', 'SwapFree')
         self.type = 'd'
@@ -1577,7 +1577,7 @@ class dstat_swap_old(dstat):
 
 class dstat_sys(dstat):
     def __init__(self):
-        self.name = ['system', ]
+        self.name = 'system'
         self.nick = ('int', 'csw')
         self.vars = ('intr', 'ctxt')
         self.type = 'd'
@@ -1600,7 +1600,7 @@ class dstat_sys(dstat):
 
 class dstat_tcp(dstat):
     def __init__(self):
-        self.name = ['tcp sockets', ]
+        self.name = 'tcp sockets'
         self.nick = ('lis', 'act', 'syn', 'tim', 'clo')
         self.vars = ('listen', 'established', 'syn', 'wait', 'close')
         self.type = 'd'
@@ -1623,7 +1623,7 @@ class dstat_tcp(dstat):
 
 class dstat_time(dstat):
     def __init__(self):
-        self.name = ['system', ]
+        self.name = 'system'
         self.timefmt = os.getenv('DSTAT_TIMEFMT') or '%d-%m %H:%M:%S'
         self.type = 's'
         if op.debug:
@@ -1642,7 +1642,7 @@ class dstat_time(dstat):
 
 class dstat_udp(dstat):
     def __init__(self):
-        self.name = ['udp', ]
+        self.name = 'udp'
         self.nick = ('lis', 'act')
         self.vars = ('listen', 'established')
         self.type = 'd'
@@ -1658,7 +1658,7 @@ class dstat_udp(dstat):
 
 class dstat_unix(dstat):
     def __init__(self):
-        self.name = ['unix sockets', ]
+        self.name = 'unix sockets'
         self.nick = ('dgm', 'str', 'lis', 'act')
         self.vars = ('datagram', 'stream', 'listen', 'established')
         self.type = 'd'
@@ -1677,7 +1677,7 @@ class dstat_unix(dstat):
 
 class dstat_vm(dstat):
     def __init__(self):
-        self.name = ['virtual memory', ]
+        self.name = 'virtual memory'
         self.nick = ('majpf', 'minpf', 'alloc', 'free')
         ### Page allocations should include all page zones, not just ZONE_NORMAL,
         ### but also ZONE_DMA, ZONE_HIGHMEM, ZONE_DMA32 (depending on architecture)
@@ -1704,7 +1704,7 @@ class dstat_vm(dstat):
 
 class dstat_vm_adv(dstat_vm):
     def __init__(self):
-        self.name = ['advanced virtual memory', ]
+        self.name = 'advanced virtual memory'
         self.nick = ('steal', 'scanK', 'scanD', 'pgoru', 'astll')
         self.vars = ('pgsteal_*', 'pgscan_kswapd_*', 'pgscan_direct_*', 'pageoutrun', 'allocstall')
         self.type = 'd'
@@ -1714,7 +1714,7 @@ class dstat_vm_adv(dstat_vm):
 
 class dstat_zones(dstat):
     def __init__(self):
-        self.name = ['zones memory', ]
+        self.name = 'zones memory'
 #        self.nick = ('dmaF', 'dmaH', 'd32F', 'd32H', 'movaF', 'movaH')
 #        self.vars = ('DMA_free', 'DMA_high', 'DMA32_free', 'DMA32_high', 'Movable_free', 'Movable_high')
         self.nick = ('d32F', 'd32H', 'normF', 'normH')
