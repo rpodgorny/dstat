@@ -2030,6 +2030,8 @@ def snmpwalk(server, community, oid):
 
 def dchg(var, width, base):
     "Convert decimal to string given base and length"
+    if var == float('inf'):
+        return 'inf', -1
     c = 0
     while True:
         ret = str(int(round(var)))
