@@ -22,7 +22,7 @@ class dstat_plugin(dstat):
         try:
             os.listdir('/proc/vmware')
         except:
-            raise Exception, 'Needs VMware ESX'
+            raise Exception('Needs VMware ESX')
         info(1, 'The vmknic module is an EXPERIMENTAL module.')
 
     def discover(self, *list):
@@ -63,13 +63,13 @@ class dstat_plugin(dstat):
             if l[0] == 'Usage:': continue
             name = l[0]
             if name in self.vars:
-                self.set2[name] = ( long(l[6]), long(l[9]) )
+                self.set2[name] = ( int(l[6]), int(l[9]) )
             if name != 'lo0':
-                self.set2['total'] = ( self.set2['total'][0] + long(l[6]), self.set2['total'][1] + long(l[9]) )
+                self.set2['total'] = ( self.set2['total'][0] + int(l[6]), self.set2['total'][1] + int(l[9]) )
 
         if update:
-            for name in self.set2.keys():
-                self.val[name] = map(lambda x, y: (y - x) * 1.0 / elapsed, self.set1[name], self.set2[name])
+            for name in self.set2:
+                self.val[name] = list(map(lambda x, y: (y - x) * 1.0 / elapsed, self.set1[name], self.set2[name]))
 
         if step == op.delay:
             self.set1.update(self.set2)

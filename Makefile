@@ -33,6 +33,7 @@ clean:
 	$(MAKE) -C docs clean
 
 test:
+	./dstat --version
 	./dstat -taf 1 5
 	./dstat -t --all-plugins 1 5
 
@@ -50,3 +51,6 @@ rpm: dist
 
 srpm: dist
 	rpmbuild -ts --clean --rmspec --define "_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" --define "_srcrpmdir ../" ../$(name)-$(version).tar.bz2
+
+snap:
+	cd packaging/snap/; snapcraft

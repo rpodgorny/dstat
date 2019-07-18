@@ -35,7 +35,7 @@ class dstat_plugin(dstat):
         self.val['total'] = 0.0
         for line in self.splitlines():
             if line[0] == 'intr':
-                self.intset2 = [ long(i) for i in line[3:] ]
+                self.intset2 = [ int(i) for i in line[3:] ]
 
         if not self.intset1:
             self.intset1 = [ 0 for i in self.intset2 ]
@@ -45,7 +45,7 @@ class dstat_plugin(dstat):
 
             ### Put the highest value in self.val
             if total > self.val['total']:
-                if str(i+1) in self.names.keys():
+                if str(i+1) in self.names:
                     self.val['name'] = self.names[str(i+1)]
                 else:
                     self.val['name'] = 'int ' + str(i+1)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 ### This program is free software; you can redistribute it and/or
 ### modify it under the terms of the GNU General Public License
@@ -14,46 +14,31 @@
 ### along with this program; if not, write to the Free Software
 ### Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-### Copyright 2004-2016 Dag Wieers <dag@wieers.com>
+### Copyright 2004-2019 Dag Wieers <dag@wieers.com>
 
-try:
-    import sys, os, time, sched, re, getopt, fnmatch
-    import types, resource, getpass, glob, linecache
-except KeyboardInterrupt:
-    pass
+from __future__ import absolute_import, division, generators, print_function
+__metaclass__ = type
 
-VERSION = '0.7.3'
+import collections
+import fnmatch
+import getopt
+import getpass
+import glob
+import linecache
+import os
+import re
+import resource
+import sched
+import six
+import sys
+import time
+
+VERSION = '0.8.0'
 
 theme = { 'default': '' }
 
 if sys.version_info < (2, 2):
     sys.exit('error: Python 2.2 or later required')
-
-### Workaround for python < 2.3
-#if 'enumerate' not in __builtins__.__dict__.keys():
-if sys.version_info >= (2, 2) and sys.version_info < (2, 3):
-    def enumerate(sequence):
-        index = 0
-        for item in sequence:
-            yield index, item
-            index = index + 1
-elif sys.version_info < (2, 2):
-    def enumerate(sequence):
-        index = 0
-        seqlist = []
-        for item in sequence:
-            seqlist.append((index, item))
-            index = index + 1
-        return seqlist
-
-### Workaround for python < 2.3
-#if 'sum' not in __builtins__.__dict__.keys():
-if sys.version_info < (2, 3):
-    def sum(sequence):
-        ret = 0
-        for i in sequence:
-            ret = ret + i
-        return ret
 
 pluginpath = [
     os.path.expanduser('~/.dstat/'),                                # home + /.dstat/
@@ -111,7 +96,7 @@ class Options:
                  'list', 'mods', 'modules', 'nocolor', 'noheaders', 'noupdate',
                  'output=', 'pidfile=', 'profile', 'version', 'vmstat'] + allplugins)
         except getopt.error as exc:
-            print('dstat: %s, try dstat -h for a list of all the options' % str(exc))
+            print('dstat: %s, try dstat -h for a list of all the options' % exc)
             sys.exit(1)
 
         for opt, arg in opts:
@@ -262,7 +247,7 @@ class Options:
         print('Usage: dstat [-afv] [options..] [delay [count]]')
 
     def help(self):
-        print('''Versatile tool for generating system resource statistics
+        print('''Versatile tool for generating system resource statistics)
 
 Dstat options:
   -c, --cpu                enable cpu stats
@@ -298,7 +283,7 @@ Dstat options:
   --zones                  enable zoneinfo stats
 
   --list                   list all available plugins
-  --plugin                 enable external plugin by name (see --list)
+  --<plugin-name>          enable external plugin by name (see --list)
 
   -a, --all                equals -cdngy (default)
   -f, --full               automatically expand -C, -D, -I, -N and -S lists
@@ -364,9 +349,9 @@ class dstat:
                 self.val[name] = list(range(self.cols))
                 self.set1[name] = list(range(self.cols))
                 self.set2[name] = list(range(self.cols))
-                for i in range(self.cols):
+                for i in list(range(self.cols)):
                     self.val[name][i] = self.set1[name][i] = self.set2[name][i] = 0
-#        print self.val
+#        print(self.val)
 
     def open(self, *filenames):
         "Open stat file descriptor"
@@ -388,7 +373,6 @@ class dstat:
         for fd in self.fd:
             fd.seek(0)
             for line in fd.readlines():
-               line = line.decode()
                yield line
         ### Implemented linecache (for top-plugins) but slows down normal plugins
 #        for fd in self.fd:
@@ -409,7 +393,6 @@ class dstat:
         for fd in self.fd:
             fd.seek(0)
             for line in fd.readlines():
-                line = line.decode()
                 if replace and sep:
                     yield line.replace(replace, sep).split(sep)
                 elif replace:
@@ -435,14 +418,14 @@ class dstat:
 
     def colwidth(self):
         "Return column width"
-        if isinstance(self.name, str):
+        if isinstance(self.name, six.string_types):
             return self.width
         else:
             return len(self.nick) * self.width + len(self.nick) - 1
 
     def title(self):
         ret = theme['title']
-        if isinstance(self.name, str):
+        if isinstance(self.name, six.string_types):
             width = self.statwidth()
             return ret + self.name[0:width].center(width).replace(' ', '-') + theme['default']
         for i, name in enumerate(self.name):
@@ -457,7 +440,7 @@ class dstat:
 
     def subtitle(self):
         ret = ''
-        if isinstance(self.name, str):
+        if isinstance(self.name, six.string_types):
             for i, nick in enumerate(self.nick):
                 ret = ret + theme['subtitle'] + nick[0:self.width].center(self.width) + theme['default']
                 if i + 1 != len(self.nick): ret = ret + char['space']
@@ -471,7 +454,7 @@ class dstat:
             return ret
 
     def csvtitle(self):
-        if isinstance(self.name, str):
+        if isinstance(self.name, six.string_types):
             return '"' + self.name + '"' + char['sep'] * (len(self.nick) - 1)
         else:
             ret = ''
@@ -482,7 +465,7 @@ class dstat:
 
     def csvsubtitle(self):
         ret = ''
-        if isinstance(self.name, str):
+        if isinstance(self.name, six.string_types):
             for i, nick in enumerate(self.nick):
                 ret = ret + '"' + nick + '"'
                 if i + 1 != len(self.nick): ret = ret + char['sep']
@@ -503,7 +486,7 @@ class dstat:
     def check(self):
         "Check if stat is applicable"
 #        if hasattr(self, 'fd') and not self.fd:
-#            raise Exception('File %s does not exist' % self.fd)
+#            raise Exception, 'File %s does not exist' % self.fd
         if not self.vars:
             raise Exception('No objects found, no stats available')
         if not self.discover:
@@ -522,22 +505,22 @@ class dstat:
             return cprint(self.output, self.type, self.width, self.scale)
         for i, name in enumerate(self.vars):
             if i < len(self.types):
-                type = self.types[i]
+                ctype = self.types[i]
             else:
-                type = self.type
+                ctype = self.type
             if i < len(self.scales):
                 scale = self.scales[i]
             else:
                 scale = self.scale
-            if isinstance(self.val[name], tuple) or isinstance(self.val[name], list):
-                line = line + cprintlist(self.val[name], type, self.width, scale)
+            if isinstance(self.val[name], collections.Sequence) and not isinstance(self.val[name], six.string_types):
+                line = line + cprintlist(self.val[name], ctype, self.width, scale)
                 sep = theme['frame'] + char['colon']
                 if i + 1 != len(self.vars):
                     line = line + sep
             else:
                 ### Make sure we don't show more values than we have nicknames
                 if i >= len(self.nick): break
-                line = line + cprint(self.val[name], type, self.width, scale)
+                line = line + cprint(self.val[name], ctype, self.width, scale)
                 sep = char['space']
                 if i + 1 != len(self.nick):
                     line = line + sep
@@ -554,16 +537,16 @@ class dstat:
         def printcsv(var):
             if var != round(var):
                 return '%.3f' % var
-            return '%d' % long(round(var))
+            return '%d' % int(round(var))
 
         line = ''
         for i, name in enumerate(self.vars):
-            if isinstance(self.val[name], list) or isinstance(self.val[name], tuple):
+            if isinstance(self.val[name], types.ListType) or isinstance(self.val[name], types.TupleType):
                 for j, val in enumerate(self.val[name]):
                     line = line + printcsv(val)
                     if j + 1 != len(self.val[name]):
                         line = line + char['sep']
-            elif isinstance(self.val[name], str):
+            elif isinstance(self.val[name], types.StringType):
                 line = line + self.val[name]
             else:
                 line = line + printcsv(self.val[name])
@@ -645,12 +628,12 @@ class dstat_cpu(dstat):
                     self.set2[name] = ( int(l[1]) + int(l[2]) + int(l[6]) + int(l[7]), int(l[3]), int(l[4]), int(l[5]), int(l[8]) )
 
         for name in self.vars:
-            for i in range(self.cols):
+            for i in list(range(self.cols)):
                 if sum(self.set2[name]) > sum(self.set1[name]):
                     self.val[name][i] = 100.0 * (self.set2[name][i] - self.set1[name][i]) / (sum(self.set2[name]) - sum(self.set1[name]))
                 else:
                     self.val[name][i] = 0
-#                    print >>sys.stderr, "Error: tick problem detected, this should never happen !"
+#                    print("Error: tick problem detected, this should never happen !", file=sys.stderr)
 
         if step == op.delay:
             self.set1.update(self.set2)
@@ -664,7 +647,7 @@ class dstat_cpu_use(dstat_cpu):
         self.open('/proc/stat')
         self.cols = 7
         if not op.cpulist:
-            self.vars = [ str(x) for x in range(cpunr) ]
+            self.vars = [ str(x) for x in list(range(cpunr)) ]
 
     def extract(self):
         for l in self.splitlines():
@@ -678,7 +661,7 @@ class dstat_cpu_use(dstat_cpu):
                 self.val[name] = 100.0 - 100.0 * (self.set2[name][2] - self.set1[name][2]) / (sum(self.set2[name]) - sum(self.set1[name]))
             else:
                 self.val[name] = 0
-#                    print >>sys.stderr, "Error: tick problem detected, this should never happen !"
+#                    print("Error: tick problem detected, this should never happen !", file=sys.stderr)
 
         if step == op.delay:
             self.set1.update(self.set2)
@@ -700,12 +683,12 @@ class dstat_cpu_adv(dstat_cpu):
                     self.set2[name] = ( int(l[1]) + int(l[2]), int(l[3]), int(l[4]), int(l[5]), int(l[6]), int(l[7]), int(l[8]) )
 
         for name in self.vars:
-            for i in range(self.cols):
+            for i in list(range(self.cols)):
                 if sum(self.set2[name]) > sum(self.set1[name]):
                     self.val[name][i] = 100.0 * (self.set2[name][i] - self.set1[name][i]) / (sum(self.set2[name]) - sum(self.set1[name]))
                 else:
                     self.val[name][i] = 0
-#                    print >>sys.stderr, "Error: tick problem detected, this should never happen !"
+#                    print("Error: tick problem detected, this should never happen !", file=sys.stderr)
 
         if step == op.delay:
             self.set1.update(self.set2)
@@ -762,7 +745,7 @@ class dstat_cpu24(dstat):
                     self.set2[name] = ( int(l[1]) + int(l[2]), int(l[3]), int(l[4]) )
 
         for name in self.vars:
-            for i in range(self.cols):
+            for i in list(range(self.cols)):
                 self.val[name][i] = 100.0 * (self.set2[name][i] - self.set1[name][i]) / (sum(self.set2[name]) - sum(self.set1[name]))
 
         if step == op.delay:
@@ -824,7 +807,7 @@ class dstat_disk(dstat):
 #           if len(varlist) > 2: varlist = varlist[0:2]
             varlist.sort()
         for name in varlist:
-            if name in self.discover + ['total'] + list(op.diskset.keys()):
+            if name in self.discover + ['total'] or name in op.diskset:
                 ret.append(name)
         return ret
 
@@ -843,12 +826,12 @@ class dstat_disk(dstat):
             if name in self.vars and name != 'total':
                 self.set2[name] = ( self.set2[name][0] + int(l[5]), self.set2[name][1] + int(l[9]) )
             for diskset in self.vars:
-                if diskset in list(op.diskset.keys()):
+                if diskset in op.diskset:
                     for disk in op.diskset[diskset]:
                         if fnmatch.fnmatch(name, disk):
                             self.set2[diskset] = ( self.set2[diskset][0] + int(l[5]), self.set2[diskset][1] + int(l[9]) )
 
-        for name in list(self.set2.keys()):
+        for name in self.set2:
             self.val[name] = list(map(lambda x, y: (y - x) * 512.0 / elapsed, self.set1[name], self.set2[name]))
 
         if step == op.delay:
@@ -910,7 +893,7 @@ class dstat_disk24(dstat):
 #           if len(varlist) > 2: varlist = varlist[0:2]
             varlist.sort()
         for name in varlist:
-            if name in self.discover + ['total'] + list(op.diskset.keys()):
+            if name in self.discover + ['total'] or name in op.diskset:
                 ret.append(name)
         return ret
 
@@ -927,12 +910,12 @@ class dstat_disk24(dstat):
             if name in self.vars:
                 self.set2[name] = ( self.set2[name][0] + int(l[6]), self.set2[name][1] + int(l[10]) )
             for diskset in self.vars:
-                if diskset in list(op.diskset.keys()):
+                if diskset in op.diskset:
                     for disk in op.diskset[diskset]:
                         if fnmatch.fnmatch(name, disk):
                             self.set2[diskset] = ( self.set2[diskset][0] + int(l[6]), self.set2[diskset][1] + int(l[10]) )
 
-        for name in list(self.set2.keys()):
+        for name in self.set2:
             self.val[name] = list(map(lambda x, y: (y - x) * 512.0 / elapsed, self.set1[name], self.set2[name]))
 
         if step == op.delay:
@@ -981,7 +964,7 @@ class dstat_disk24_old(dstat):
 #           if len(varlist) > 2: varlist = varlist[0:2]
             varlist.sort()
         for name in varlist:
-            if name in self.discover + ['total'] + list(op.diskset.keys()):
+            if name in self.discover + ['total'] or name in op.diskset:
                 ret.append(name)
         return ret
 
@@ -1005,13 +988,13 @@ class dstat_disk24_old(dstat):
                 if name in self.vars and name != 'total':
                     self.set2[name] = ( self.set2[name][0] + int(l[2]), self.set2[name][1] + int(l[3]) )
                 for diskset in self.vars:
-                    if diskset in list(op.diskset.keys()):
+                    if diskset in op.diskset:
                         for disk in op.diskset[diskset]:
                             if fnmatch.fnmatch(name, disk):
                                 self.set2[diskset] = ( self.set2[diskset][0] + int(l[2]), self.set2[diskset][1] + int(l[3]) )
             break
 
-        for name in list(self.set2.keys()):
+        for name in self.set2:
             self.val[name] = list(map(lambda x, y: (y - x) * 512.0 / elapsed, self.set1[name], self.set2[name]))
 
         if step == op.delay:
@@ -1099,7 +1082,7 @@ class dstat_int(dstat):
         for name in varlist:
             if name in self.discover + ['total',]:
                 ret.append(name)
-            elif name.lower() in list(self.intmap.keys()):
+            elif name.lower() in self.intmap:
                 ret.append(self.intmap[name.lower()])
         return ret
 
@@ -1166,7 +1149,7 @@ class dstat_int24(dstat):
         for name in varlist:
             if name in self.discover:
                 ret.append(name)
-            elif name.lower() in list(self.intmap.keys()):
+            elif name.lower() in self.intmap:
                 ret.append(self.intmap[name.lower()])
         return ret
 
@@ -1181,9 +1164,9 @@ class dstat_int24(dstat):
 #           elif len(l) > 2 + cpunr:
 #               for hw in self.vars:
 #                   for mod in l[2+cpunr:]:
-#                       self.set2[mod] = long(l[1])
+#                       self.set2[mod] = int(l[1])
 
-        for name in list(self.set2.keys()):
+        for name in self.set2:
             self.val[name] = (self.set2[name] - self.set1[name]) * 1.0 / elapsed
 
         if step == op.delay:
@@ -1226,7 +1209,7 @@ class dstat_io(dstat):
 #           if len(varlist) > 2: varlist = varlist[0:2]
             varlist.sort()
         for name in varlist:
-            if name in self.discover + ['total'] + list(op.diskset.keys()):
+            if name in self.discover + ['total'] or name in op.diskset:
                 ret.append(name)
         return ret
 
@@ -1245,12 +1228,12 @@ class dstat_io(dstat):
             if name in self.vars and name != 'total':
                 self.set2[name] = ( self.set2[name][0] + int(l[3]), self.set2[name][1] + int(l[7]) )
             for diskset in self.vars:
-                if diskset in list(op.diskset.keys()):
+                if diskset in op.diskset:
                     for disk in op.diskset[diskset]:
                         if fnmatch.fnmatch(name, disk):
                             self.set2[diskset] = ( self.set2[diskset][0] + int(l[3]), self.set2[diskset][1] + int(l[7]) )
 
-        for name in list(self.set2.keys()):
+        for name in self.set2:
             self.val[name] = list(map(lambda x, y: (y - x) * 1.0 / elapsed, self.set1[name], self.set2[name]))
 
         if step == op.delay:
@@ -1318,9 +1301,9 @@ class dstat_mem(dstat):
             if len(l) < 2: continue
             name = l[0].split(':')[0]
             if name in self.vars:
-                self.val[name] = long(l[1]) * 1024.0
+                self.val[name] = int(l[1]) * 1024.0
             if name in adv_extract_vars:
-                adv_val[name] = long(l[1]) * 1024.0
+                adv_val[name] = int(l[1]) * 1024.0
 
         self.val['MemUsed'] = adv_val['MemTotal'] - self.val['MemFree'] - self.val['Buffers'] - self.val['Cached'] - adv_val['SReclaimable'] + adv_val['Shmem']
 
@@ -1389,7 +1372,7 @@ class dstat_net(dstat):
                 self.set2['total'] = ( self.set2['total'][0] + int(l[1]), self.set2['total'][1] + int(l[9]))
 
         if update:
-            for name in list(self.set2.keys()):
+            for name in self.set2:
                 self.val[name] = list(map(lambda x, y: (y - x) * 1.0 / elapsed, self.set1[name], self.set2[name]))
                 if self.val[name][0] < 0: self.val[name][0] += maxint + 1
                 if self.val[name][1] < 0: self.val[name][1] += maxint + 1
@@ -1478,8 +1461,8 @@ class dstat_raw(dstat):
         self.nick = ('raw',)
         self.vars = ('sockets',)
         self.type = 'd'
-        self.width = 3
-        self.scale = 100
+        self.width = 4
+        self.scale = 1000
         self.open('/proc/net/raw')
 
     def extract(self):
@@ -1494,8 +1477,8 @@ class dstat_socket(dstat):
     def __init__(self):
         self.name = 'sockets'
         self.type = 'd'
-        self.width = 3
-        self.scale = 100
+        self.width = 4
+        self.scale = 1000
         self.open('/proc/net/sockstat')
         self.nick = ('tot', 'tcp', 'udp', 'raw', 'frg')
         self.vars = ('sockets:', 'TCP:', 'UDP:', 'RAW:', 'FRAG:')
@@ -1605,7 +1588,7 @@ class dstat_tcp(dstat):
         self.vars = ('listen', 'established', 'syn', 'wait', 'close')
         self.type = 'd'
         self.width = 4
-        self.scale = 100
+        self.scale = 1000
         self.open('/proc/net/tcp', '/proc/net/tcp6')
 
     def extract(self):
@@ -1646,8 +1629,8 @@ class dstat_udp(dstat):
         self.nick = ('lis', 'act')
         self.vars = ('listen', 'established')
         self.type = 'd'
-        self.width = 3
-        self.scale = 100
+        self.width = 4
+        self.scale = 1000
         self.open('/proc/net/udp', '/proc/net/udp6')
 
     def extract(self):
@@ -1662,8 +1645,8 @@ class dstat_unix(dstat):
         self.nick = ('dgm', 'str', 'lis', 'act')
         self.vars = ('datagram', 'stream', 'listen', 'established')
         self.type = 'd'
-        self.width = 3
-        self.scale = 100
+        self.width = 4
+        self.scale = 1000
         self.open('/proc/net/unix')
 
     def extract(self):
@@ -1854,13 +1837,12 @@ def set_theme():
 def ticks():
     "Return the number of 'ticks' since bootup"
     try:
-        for line in open('/proc/uptime', 'r'):
+        for line in open('/proc/uptime', 'r').readlines():
             l = line.split()
             if len(l) < 2: continue
             return float(l[0])
     except:
         for line in dopen('/proc/stat').readlines():
-            line = line.decode()
             l = line.split()
             if len(l) < 2: continue
             if l[0] == 'btime':
@@ -1879,19 +1861,18 @@ def dopen(filename):
     global fds
     if not os.path.exists(filename):
         raise Exception('File %s does not exist' % filename)
-#        return None
-    if 'fds' not in list(globals().keys()):
+    if 'fds' not in globals():
         fds = {}
-    if filename not in fds.keys():
-        fds[filename] = open(filename, 'rb', 0)
-    else:
+    if filename in fds:
         fds[filename].seek(0)
+    else:
+        fds[filename] = open(filename, 'r')
     return fds[filename]
 
 def dclose(filename):
     "Close an open file and remove file descriptor from list"
     global fds
-    if not 'fds' in list(globals().keys()): fds = {}
+    if not 'fds' in globals(): fds = {}
     if filename in fds:
         fds[filename].close()
         del(fds[filename])
@@ -1900,8 +1881,8 @@ def dpopen(cmd):
     "Open a pipe for reuse, if already opened, return pipes"
     global pipes, select
     import select
-    if 'pipes' not in list(globals().keys()): pipes = {}
-    if cmd not in list(pipes.keys()):
+    if 'pipes' not in globals(): pipes = {}
+    if cmd not in pipes:
         try:
             import asubprocess
             p = subprocess.Popen(cmd, shell=True, bufsize=0, close_fds=True,
@@ -2029,7 +2010,7 @@ def snmpget(server, community, oid):
         cmdgen.UdpTransportTarget((server, 161)),
         oid
     )
-#    print '%s -> ind: %s, stat: %s, idx: %s' % (oid, errorIndication, errorStatus, errorIndex)
+#    print('%s -> ind: %s, stat: %s, idx: %s' % (oid, errorIndication, errorStatus, errorIndex))
     for x in varBinds:
         return str(x[1])
 
@@ -2040,7 +2021,7 @@ def snmpwalk(server, community, oid):
         cmdgen.UdpTransportTarget((server, 161)),
         oid
     )
-#    print '%s -> ind: %s, stat: %s, idx: %s' % (oid, errorIndication, errorStatus, errorIndex)
+#    print('%s -> ind: %s, stat: %s, idx: %s' % (oid, errorIndication, errorStatus, errorIndex))
     for x in varBindTable:
         for y in x:
             ret.append(str(y[1]))
@@ -2067,7 +2048,7 @@ def fchg(var, width, base):
             ret = str('0')
             break
 #       ret = repr(round(var))
-#       ret = repr(long(round(var, maxlen)))
+#       ret = repr(int(round(var, maxlen)))
         ret = str(int(round(var, width)))
         if len(ret) <= width:
             i = width - len(ret) - 1
@@ -2096,15 +2077,15 @@ def tchg(var, width):
                 ret = '%2dw' % (var / 60 / 24 / 7)
     return ret
 
-def cprintlist(varlist, type, width, scale):
+def cprintlist(varlist, ctype, width, scale):
     "Return all columns color printed"
     ret = sep = ''
     for var in varlist:
-        ret = ret + sep + cprint(var, type, width, scale)
+        ret = ret + sep + cprint(var, ctype, width, scale)
         sep = char['space']
     return ret
 
-def cprint(var, type = 'f', width = 4, scale = 1000):
+def cprint(var, ctype = 'f', width = 4, scale = 1000):
     "Color print one column"
 
     base = 1000
@@ -2118,7 +2099,7 @@ def cprint(var, type = 'f', width = 4, scale = 1000):
         width = width - 1
 
     ### If this is a negative value, return a dash
-    if var < 0:
+    if ctype != 's' and var < 0:
         if unit:
             return theme['error'] + '-'.rjust(width) + char['space'] + theme['default']
         else:
@@ -2126,7 +2107,7 @@ def cprint(var, type = 'f', width = 4, scale = 1000):
 
     if base != 1024:
         units = (char['space'], 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-    elif op.bits and type in ('b', ):
+    elif op.bits and ctype in ('b', ):
         units = ('b', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
         base = scale = 1000
         var = var * 8.0
@@ -2145,39 +2126,39 @@ def cprint(var, type = 'f', width = 4, scale = 1000):
         cdone = theme['done_hi']
 
     ### Convert value to string given base and field-length
-    if op.integer and type in ('b', 'd', 'p', 'f'):
+    if op.integer and ctype in ('b', 'd', 'p', 'f'):
         ret, c = dchg(var, width, base)
-    elif op.float and type in ('b', 'd', 'p', 'f'):
+    elif op.float and ctype in ('b', 'd', 'p', 'f'):
         ret, c = fchg(var, width, base)
-    elif type in ('b', 'd', 'p'):
+    elif ctype in ('b', 'd', 'p'):
         ret, c = dchg(var, width, base)
-    elif type in ('f'):
+    elif ctype in ('f',):
         ret, c = fchg(var, width, base)
-    elif type in ('s',):
+    elif ctype in ('s',):
         ret, c = str(var), ctext
-    elif type in ('t'):
+    elif ctype in ('t',):
         ret, c = tchg(var, width), ctext
     else:
-        raise Exception('Type %s not known to dstat.' % type)
+        raise Exception('Type %s not known to dstat.' % ctype)
 
     ### Set the counter color
     if ret == '0':
         color = cunit
     elif scale <= 0:
         color = ctext
-    elif type in ('p') and round(var) >= 100.0:
+    elif ctype in ('p') and round(var) >= 100.0:
         color = cdone
 #    elif type in ('p'):
 #        color = colors[int(round(var)/scale)%len(colors)]
     elif scale not in (1000, 1024):
         color = colors[int(var/scale)%len(colors)]
-    elif type in ('b', 'd', 'f'):
+    elif ctype in ('b', 'd', 'f'):
         color = colors[c%len(colors)]
     else:
         color = ctext
 
     ### Justify value to left if string
-    if type in ('s',):
+    if ctype in ('s',):
         ret = color + ret.ljust(width)
     else:
         ret = color + ret.rjust(width)
@@ -2227,14 +2208,14 @@ def csvheader(totlist):
             line = line + char['sep']
     return line + '\n'
 
-def info(level, str):
+def info(level, msg):
     "Output info message"
 #   if level <= op.verbose:
-    print(str, file=sys.stderr)
+    print(msg, file=sys.stderr)
 
-def die(ret, str):
+def die(ret, msg):
     "Print error and exit with errorcode"
-    print(str, file=sys.stderr)
+    print(msg, file=sys.stderr)
     exit(ret)
 
 def initterm():
@@ -2470,7 +2451,7 @@ def listplugins():
 
 def showplugins():
     rows, cols = gettermsize()
-    print('internal:\n\t', end=' ')
+    print('internal:\n\t', end='')
     remod = re.compile('^dstat_(.+)$')
     plugins = []
     for filename in globals():
@@ -2481,10 +2462,10 @@ def showplugins():
     for mod in plugins:
         cols2 = cols2 - len(mod) - 2
         if cols2 <= 0:
-            print('\n\t', end=' ')
+            print('\n\t', end='')
             cols2 = cols - len(mod) - 10
         if mod != plugins[-1]:
-            print(mod+',', end=' ')
+            print(mod, end=',')
     print(mod)
     remod = re.compile('.+/dstat_(.+).py$')
     for path in pluginpath:
@@ -2494,14 +2475,14 @@ def showplugins():
         if not plugins: continue
         plugins.sort()
         cols2 = cols - 8
-        print('%s:\n\t' % os.path.abspath(path), end=' ')
+        print('%s:' % os.path.abspath(path), end='\n\t')
         for mod in plugins:
             cols2 = cols2 - len(mod) - 2
             if cols2 <= 0:
-                print('\n\t', end=' ')
+                print(end='\n\t')
                 cols2 = cols - len(mod) - 10
             if mod != plugins[-1]:
-                print(mod+',', end=' ')
+                print(mod, end=',')
         print(mod)
 
 def exit(ret):
@@ -2523,7 +2504,7 @@ def exit(ret):
 #        p.sort_stats('time', 'cum').print_stats(.5, 'init')
 #        p.print_callees()
     elif op.profile:
-        print("No profiling data was found, maybe profiler was interrupted ?", file=sys.stderr)
+        print('No profiling data was found, maybe profiler was interrupted ?', file=sys.stderr)
 
     sys.exit(ret)
 
@@ -2536,16 +2517,17 @@ def main():
 
     cpunr = getcpunr()
     hz = os.sysconf('SC_CLK_TCK')
-    maxint = (sys.maxsize + 1) * 2
+    try:
+        maxint = (sys.maxint + 1) * 2
+    except:
+        # Support Python 3
+        maxint = float("inf")
     ownpid = str(os.getpid())
     pagesize = resource.getpagesize()
     interval = 1
 
     user = getpass.getuser()
     hostname = os.uname()[1]
-
-    ### Disable line-wrapping (does not work ?)
-    sys.stdout.write('\033[7l')
 
     ### Write term-title
     if sys.stdout.isatty():
@@ -2573,12 +2555,12 @@ def main():
     ### Prepare CSV output file (unbuffered)
     if op.output:
         if not os.path.exists(op.output):
-            outputfile = open(op.output, 'w', 0)
+            outputfile = open(op.output, 'w')
             outputfile.write('"Dstat %s CSV output"\n' % VERSION)
             header = ('"Author:","Dag Wieers <dag@wieers.com>"','','','','"URL:"','"http://dag.wieers.com/home-made/dstat/"\n')
             outputfile.write(char['sep'].join(header))
         else:
-            outputfile = open(op.output, 'a', 0)
+            outputfile = open(op.output, 'a')
             outputfile.write('\n\n')
 
         header = ('"Host:"','"%s"' % hostname,'','','','"User:"','"%s"\n' % user)
@@ -2589,22 +2571,27 @@ def main():
     ### Create pidfile
     if op.pidfile:
         try:
-            pidfile = open(op.pidfile, 'w', 0)
+            pidfile = open(op.pidfile, 'w')
             pidfile.write(str(os.getpid()))
             pidfile.close()
         except Exception as e:
-            print('Failed to create pidfile %s' % op.pidfile, e, file=sys.stderr)
+            print('Failed to create pidfile %s: %s' % (op.pidfile, e), file=sys.stderr)
             op.pidfile = False
 
     ### Empty ansi and theme database if no colors are requested
     if not op.color:
-        for key in list(color.keys()):
+        for key in color:
             color[key] = ''
-        for key in list(theme.keys()):
+        for key in theme:
             theme[key] = ''
+        for key in ansi:
+            ansi[key] = ''
         theme['colors_hi'] = (ansi['default'],)
         theme['colors_lo'] = (ansi['default'],)
 #        print color['blackbg']
+
+    ### Disable line-wrapping (does not work ?)
+    sys.stdout.write(ansi['nolinewrap'])
 
     if not op.update:
         interval = op.delay
@@ -2625,7 +2612,7 @@ def main():
         for mod in mods:
             pluginfile = 'dstat_' + mod.replace('-', '_')
             try:
-                if pluginfile not in list(globals().keys()):
+                if pluginfile not in globals():
                     import imp
                     fp, pathname, description = imp.find_module(pluginfile, pluginpath)
                     fp.close()
@@ -2633,31 +2620,30 @@ def main():
                     ### TODO: Would using .pyc help with anything ?
                     ### Try loading python plugin
                     if description[0] in ('.py', ):
-                        exec(compile(open(pathname).read(), pathname, 'exec'))
-                        exec('o = dstat_plugin(); del(dstat_plugin)')
-                        o.filename = pluginfile
-                        o.check()
-                        o.prepare()
+                        exec(open(pathname).read())
+                        #execfile(pathname)
+                        exec('global plug; plug = dstat_plugin(); del(dstat_plugin)')
+                        plug.filename = pluginfile
+                        plug.check()
+                        plug.prepare()
 
                     ### Try loading C plugin (not functional yet)
                     elif description[0] == '.so':
-                        exec('import %s' % pluginfile)
-                        exec('o = %s.new()' % pluginfile)
-                        o.check()
-                        o.prepare()
-#                        print dir(o)
-#                        print o.__module__
-#                        print o.name
+                        exec('import %s; global plug; plug = %s.new()' % (pluginfile, pluginfile))
+                        plug.check()
+                        plug.prepare()
+#                        print(dir(plug))
+#                        print(plug.__module__)
+#                        print(plug.name)
                     else:
                         print('Module %s is of unknown type.' % pluginfile, file=sys.stderr)
 
                 else:
-                    o = globals()[pluginfile]()
-                    o.check()
-                    o.prepare()
-#                print o.__module__
+                    exec('global plug; plug = %s()' % pluginfile)
+                    plug.check()
+                    plug.prepare()
+#                print(plug.__module__)
             except Exception as e:
-                raise
                 if mod == mods[-1]:
                     print('Module %s failed to load. (%s)' % (pluginfile, e), file=sys.stderr)
                 elif op.debug:
@@ -2669,13 +2655,13 @@ def main():
             except:
                 print('Module %s caused unknown exception' % pluginfile, file=sys.stderr)
 
-            linewidth = linewidth + o.statwidth() + 1
-            totlist.append(o)
+            linewidth = linewidth + plug.statwidth() + 1
+            totlist.append(plug)
 
             if op.debug:
-                print('Module', pluginfile, end=' ')
-                if hasattr(o, 'file'):
-                    print('requires', o.file, end=' ')
+                print('Module %s' % pluginfile, end='')
+                if hasattr(plug, 'file'):
+                    print(' requires %s' % plug.file, end='')
                 print()
             break
 

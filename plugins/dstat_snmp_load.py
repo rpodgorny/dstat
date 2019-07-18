@@ -16,9 +16,9 @@ class dstat_plugin(dstat):
             global cmdgen
             from pysnmp.entity.rfc3413.oneliner import cmdgen
         except:
-            raise Exception, 'Needs pysnmp and pyasn1 modules'
+            raise Exception('Needs pysnmp and pyasn1 modules')
 
     def extract(self):
-        map(lambda x, y: self.val.update({x: float(y)}), self.vars, snmpwalk(self.server, self.community, (1,3,6,1,4,1,2021,10,1,3)))
+        list(map(lambda x, y: self.val.update({x: float(y)}), self.vars, snmpwalk(self.server, self.community, (1,3,6,1,4,1,2021,10,1,3))))
 
 # vim:ts=4:sw=4:et

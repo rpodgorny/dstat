@@ -28,7 +28,7 @@ class dstat_plugin(dstat):
         self.type = 's'
         self.width = len(time.strftime(self.timefmt, time.localtime()))
         self.scale = 0
-        self.epoch = 2208988800L
+        self.epoch = 2208988800
 #        socket.setdefaulttimeout(0.25)
         self.socket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
         self.socket.settimeout(0.25)
@@ -42,9 +42,9 @@ class dstat_plugin(dstat):
         try:
             self.gettime()
         except socket.gaierror:
-            raise Exception, 'Failed to connect to NTP server %s.' % self.ntpserver
+            raise Exception('Failed to connect to NTP server %s.' % self.ntpserver)
         except socket.error:
-            raise Exception, 'Error connecting to NTP server %s.' % self.ntpserver
+            raise Exception('Error connecting to NTP server %s.' % self.ntpserver)
 
     def extract(self):
         try:

@@ -19,7 +19,7 @@ class dstat_plugin(dstat):
             l[0].split()
             name = l[0]
             if name in self.vars:
-                self.set2[name] = long(l[2])
+                self.set2[name] = int(l[2])
 
         for i, name in enumerate (self.vars):
             if self.counter[i]:
@@ -29,9 +29,9 @@ class dstat_plugin(dstat):
 
         self.val['total'] = self.val['hits'] + self.val['misses']
 
-	if self.val['total'] > 0 :
+        if self.val['total'] > 0 :
             self.val['hit_rate'] = self.val['hits'] / self.val['total'] * 100.0
-	else:
+        else:
             self.val['hit_rate'] = 0
 
         if step == op.delay:
